@@ -7,13 +7,14 @@ db_config = {
     'host': '60.204.212.12',
     'user': 'root',
     'password': 'helloworld',
-    'db': 'InternshipSystem',
+    'database': 'InternshipSystem',
     'charset': 'utf8mb4',
-    'cursorclass': mysql.connector.cursor.DictCursor
+    #'cursor_class': mysql.connector.cursor.DictCursor
 }
 
 # 连接数据库
 connection = mysql.connector.connect(**db_config)
+connection.cursor()
 connection.close()
 # 定义发帖功能
 def post_message():
@@ -41,58 +42,49 @@ def post_message():
 
 
 def reply_message():
-    try:
-        # 重新打开数据库连接
-        connection = mysql.connector.connect(**db_config)
         try:
-            with connection.cursor() as cursor:
-                # 用户输入要回复的帖子ID
-                selected_post_id = simpledialog.askinteger("回复帖子", "请输入要回复的帖子ID：", parent=root)
-                if selected_post_id is None:
-                    return  # 用户取消了输入
+            connection = mysql.connector.connect(**db_config)
+            cursor = connection.cursor()
+            selected_post_id = simpledialog.askinteger("回复帖子", "请输入要回复的帖子ID：", parent=root)
+            if selected_post_id is None:
+                return
 
-                # 检查数据库中是否存在相应的帖子
-                query = "SELECT COUNT(*) FROM Discussion WHERE AuthorID = %s"
-                cursor.execute(query, (selected_post_id,))
-                result = cursor.fetchone()
-
-                if result['COUNT(*)'] > 0:
-                    # 存在相应的帖子，继续获取回复内容
-                    content = reply_text.get(1.0, tk.END).strip()
-                    if not content:
-                        messagebox.showerror("错误", "回复内容不能为空！")
-                        return
-
-                    # 插入回复到数据库
-                    sql = "INSERT INTO Discussion (AuthorID, Content) VALUES (%s, %s)"
-                    cursor.execute(sql, (selected_post_id, f"Re: \n{content}"))
-                    connection.commit()
-                    messagebox.showinfo("成功", "回复成功！")
-                    reply_text.delete(1.0, tk.END)
-                    load_messages()  # 刷新帖子列表
-                else:
-                    messagebox.showerror("错误", "没有找到相应的帖子")
-
+            # 检查数据库中是否存在相应的帖子
+            query = "SELECT COUNT(*) FROM Discussion WHERE AuthorID = %s"
+            cursor.execute(query, (selected_post_id,))
+            result = cursor.fetchone()
+            if result[0] > 0:  # 使用索引0来获取COUNT(*)的结果
+                content = reply_text.get(1.0, tk.END).strip()
+                if not content:
+                    messagebox.showerror("错误", "回复内容不能为空！")
+                    return
+                sql = "INSERT INTO Discussion (AuthorID, Content) VALUES (%s, %s)"
+                cursor.execute(sql, (selected_post_id, f"Re: \n{content}"))
+                connection.commit()
+                messagebox.showinfo("成功", "回复成功！")
+                reply_text.delete(1.0, tk.END)
+                load_messages()  # 刷新帖子列表
+            else:
+                messagebox.showerror("错误", "没有找到相应的帖子")
         except mysql.connector.Error as e:
             messagebox.showerror("数据库错误", f"无法回复：{e}")
         finally:
-            connection.close()  # 操作完成后关闭数据库连接
-    except Exception as e:
-        messagebox.showerror("错误", f"发生未知错误：{e}")
+            if connection.is_connected():
+                connection.close()
 def load_messages():
     try:
-        # 重新打开数据库连接
         connection = mysql.connector.connect(**db_config)
-        with connection.cursor() as cursor:
-            cursor.execute("SET time_zone = '+08:00'")
-            sql = "SELECT PostID, AuthorID, Content, PostTime FROM Discussion ORDER BY PostTime DESC"
-            cursor.execute(sql)
-            posts = cursor.fetchall()
-            listbox.delete(0, tk.END)  # 清空列表框
-            for post in posts:
-                # 更新GUI组件，显示帖子信息
-                listbox.insert(tk.END, f"AuthorID: {post['AuthorID']}\n{post['Content']}\nPostTime: {post['PostTime']}\n")
-        connection.close()  # 操作完成后关闭数据库连接
+        cursor = connection.cursor()
+        cursor.execute("SET time_zone = '+08:00'")
+        sql = "SELECT PostID, AuthorID, Content, PostTime FROM Discussion ORDER BY PostTime DESC"
+        cursor.execute(sql)
+        posts = cursor.fetchall()
+        listbox.delete(0, tk.END)  # 清空列表框
+        for post in posts:
+            # 更新GUI组件，显示帖子信息
+            # 注意这里使用索引来访问元组中的值
+            listbox.insert(tk.END, f"匿名用户{post[1]}\n:   {post[2]}\n  发帖时间: {post[3]}\n")
+        connection.close()
     except mysql.connector.Error as e:
         messagebox.showerror("数据库错误", f"无法加载帖子：{e}")
     except Exception as e:
