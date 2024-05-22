@@ -66,6 +66,11 @@ def insert_log():
                            (student_id, date, task_description))
             conn.commit()
             messagebox.showinfo("Success", "Log inserted successfully")
+            # 清空输入框
+            entry_student_id.delete(0, tk.END)
+            entry_date.delete(0, tk.END)
+            entry_task_description.delete(0, tk.END)
+            # 刷新日志列表
             fetch_logs()
         except Error as e:
             messagebox.showerror("Error", f"Failed to insert log: {e}")
@@ -96,24 +101,7 @@ def fetch_logs():
                 cursor.close()
                 conn.close()
 # 删除日志
-def delete_log():
-    conn = create_connection()
-    if conn is not None:
-        try:
-            selected_log_id = int(entry_log_id.delete(0, tk.END).get())
-            cursor = conn.cursor()
-            cursor.execute("DELETE FROM WorkLog WHERE LogID = %s", (selected_log_id,))
-            conn.commit()
-            messagebox.showinfo("Success", "Log deleted successfully")
-            fetch_logs()  # 刷新日志列表
-        except ValueError:
-            messagebox.showerror("Error", "Please select a valid log ID")
-        except Error as e:
-            messagebox.showerror("Error", f"Failed to delete log: {e}")
-        finally:
-            if conn.is_connected():
-                cursor.close()
-                conn.close()
+
 # 创建主窗口
 root = tk.Tk()
 root.title("学生实习日志管理系统")
@@ -142,15 +130,6 @@ label_task_description.grid(row=2, column=0, padx=10, pady=5)
 button_submit = tk.Button(root, text="提交日志", command=insert_log)
 button_submit.grid(row=3, column=1, pady=10)
 
-# 创建日志ID输入框（用于删除功能）
-label_log_id = tk.Label(root, text="Log ID (for deletion):")
-label_log_id.grid(row=3, column=0, padx=10, pady=5)
-entry_log_id = tk.Entry(root)
-entry_log_id.grid(row=4, column=0, padx=10, pady=5)
-
-# 创建删除按钮
-button_delete = tk.Button(root, text="Delete Log", command=delete_log)
-button_delete.grid(row=4, column=1, pady=10)
 
 # 创建日志列表框
 listbox_logs = tk.Listbox(root, width=50, height=10)
