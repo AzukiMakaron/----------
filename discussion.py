@@ -83,7 +83,7 @@ def load_messages():
         for post in posts:
             # 更新GUI组件，显示帖子信息
             # 注意这里使用索引来访问元组中的值
-            listbox.insert(tk.END, f"PostID: {post[0]}\nAuthorID: {post[1]}\n{post[2]}\nPostTime: {post[3]}\n")
+            listbox.insert(tk.END, f"匿名用户{post[1]}\n:   {post[2]}\n  发帖时间: {post[3]}\n")
         connection.close()
     except mysql.connector.Error as e:
         messagebox.showerror("数据库错误", f"无法加载帖子：{e}")
