@@ -65,15 +65,6 @@ class StudentInfoApp(tk.Tk):
         if file_path:
             self.upload_file_to_minio(file_path)
 
-    def upload_file_to_minio(self, filepath):
-        client = create_minio_client()
-        bucket_name = "resume"  # 存数据桶的名字
-        object_name = os.path.basename(filepath)
-        try:
-            client.fput_object(bucket_name, object_name, filepath)
-            messagebox.showinfo("上传成功", f"简历 {filepath} 上传成功.")
-        except S3Error as exc:
-            messagebox.showerror("上传失败", "上传失败，请联系管理员修复")
 
     def save_data(self):
         data = {label: entry.get() for label, entry in self.entries.items()}
@@ -89,42 +80,50 @@ class StudentInfoApp(tk.Tk):
             messagebox.showinfo("成功", "个人信息上传成功！")
         except mysql.connector.Error as err:
             messagebox.showerror("上传失败，请联系管理员修复")
-    # def save_resume_info(self, user_id, file_name): #同步将文件存入数据库，做权限认证
-    #     try:
-    #         mycursor = mydb.cursor()
-    #         sql = "INSERT INTO resumes (user_id, file_name) VALUES (%s, %s)"
-    #         val = (user_id, file_name)
-    #         mycursor.execute(sql, val)
-    #         mydb.commit()
-    #     except mysql.connector.Error as err:
-    #         messagebox.showerror("数据库错误，请联系管理员")
-    def download_resume(self):
-        try:
-            mycursor = mydb.cursor()
-            sql = "SELECT file_name FROM resumes WHERE user_id = %s"
-            val = (sign_in.userId,)
-            mycursor.execute(sql, val)
-            result = mycursor.fetchone()
-            if result:
-                file_name = result[0]
-                self.download_file_from_minio(file_name)
-            else:
-                messagebox.showwarning("无简历", "当前用户没有上传简历。")
-        except mysql.connector.Error as err:
-            messagebox.showerror("数据库错误", f"无法查询简历信息: {err}")
 
-    def download_file_from_minio(self, file_name):
+    def upload_file_to_minio(self, filepath):
+    # """上传文件到 MinIO，并将文件名改为 '学生姓名简历.pdf'"""
+        student_name = self.entries['学生姓名'].get()
+        if not student_name.strip():  # 确保学生姓名不为空且不只包含空白字符
+            messagebox.showerror("上传失败", "请先输入学生姓名")
+            return  # 如果学生姓名为空或仅包含空格，显示错误并结束函数
+
+        client = create_minio_client()
+        bucket_name = "resume"  # 数据桶的名称
+        object_name = student_name + "简历.pdf"  # 新文件名
+
+        try:
+            client.fput_object(bucket_name, object_name, filepath)  # 上传文件到 MinIO
+            messagebox.showinfo("上传成功", f"简历已上传为 {object_name}.")
+        except S3Error as exc:
+            messagebox.showerror("上传失败", "上传失败，请联系管理员修复")
+
+    def download_resume(self):
+        """从 MinIO 下载指定学生的 PDF 简历"""
+        student_name = self.entries['学生姓名'].get()
+        if student_name:
+            self.download_file_from_minio(student_name)
+        else:
+            messagebox.showerror("错误", "请先输入学生姓名")
+
+    def download_file_from_minio(self, student_name):
+        """从 MinIO 下载文件"""
+        resume_name = student_name + "简历.pdf"
+
+        # 用户选择保存文件的位置和文件名
         save_path = filedialog.asksaveasfilename(defaultextension=".pdf",
                                                  filetypes=[("PDF files", "*.pdf")],
-                                                 initialfile=file_name)
+                                                 initialfile=resume_name)
         if save_path:
             client = create_minio_client()
             bucket_name = "resume"
             try:
-                client.fget_object(bucket_name, file_name, save_path)
-                messagebox.showinfo("下载成功", f"简历 {file_name} 下载成功.")
+                # 从 MinIO 服务器下载文件
+                client.fget_object(bucket_name, resume_name, save_path)
+                messagebox.showinfo("下载成功", f"简历 {resume_name} 下载成功.")
             except S3Error as exc:
-                messagebox.showerror("下载失败", "下载失败，请联系管理员修复")
+                # 如果遇到 S3Error 异常，显示下载失败信息
+                messagebox.showerror("下载失败", "简历不存在")
 
 if __name__ == "__main__":
     app = StudentInfoApp()
