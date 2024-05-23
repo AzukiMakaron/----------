@@ -24,7 +24,7 @@ def open_module(module_name):
 
 def main1():
     root = tk.Tk()
-    root.title("学生实习信息管理系统")
+    root.title("学生实习信息管理系统 学生端")
      # 设置窗口大小和位置
     window_width = 800
     window_height = 600

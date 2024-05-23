@@ -5,7 +5,8 @@ from minio import Minio
 from minio.error import S3Error
 import mysql.connector
 import sign_in
-
+def run():
+    StudentInfoApp().mainloop()
 # Minio云服务器模拟OSS存储PDF简历
 def create_minio_client():
     return Minio(
@@ -125,6 +126,3 @@ class StudentInfoApp(tk.Tk):
                 # 如果遇到 S3Error 异常，显示下载失败信息
                 messagebox.showerror("下载失败", "简历不存在")
 
-if __name__ == "__main__":
-    app = StudentInfoApp()
-    app.mainloop()

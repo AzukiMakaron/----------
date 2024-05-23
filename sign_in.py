@@ -1,5 +1,4 @@
 import tkinter as tk
-import pymysql
 from admin  import main
 from student import main1
 from company import main2
@@ -16,6 +15,20 @@ conn =  mysql.connector.connect(
 # 获取游标
 cursor = conn.cursor()
 
+def get_user_role(user_name):
+    """从数据库获取用户角色"""
+    try:
+        connection = conn
+        cursor = connection.cursor()
+        cursor.execute("SELECT Role FROM User WHERE Username = %s", (user_name,))
+        role = cursor.fetchone()
+        return role[0] if role else None
+    except mysql.connector.Error as e:
+        print(f"Error: {e}")
+    finally:
+        if connection:
+            connection.close()
+
 #调用函数登录注册屏幕居中
 def center_window(window, width, height):
     screen_width = window.winfo_screenwidth()
@@ -25,20 +38,16 @@ def center_window(window, width, height):
     window.geometry('%dx%d+%d+%d' % (width, height, x, y))
 
 
-
-
-
-
+def getLoginUser(username):
+    sql="select Role from User where Username=%s"
+    cursor.execute(sql,(username,))
+    role=cursor.fetchone()
+    return role[0] if role else None
 # 创建登录界面
 def login(username, password):
     # 连接到数据库
-    connection = pymysql.connect(
-        host="60.204.212.12",  # 数据库主机地址
-        user="root",  # 数据库用户名
-        passwd="helloworld",  # 数据库密码
-        database="InternshipSystem"
-    )
-
+    username=get_current_user(login_frame.get_username())
+    connection = conn
     try:
         with connection.cursor() as cursor:
             # 查询数据库以验证用户信息
@@ -68,7 +77,9 @@ def login(username, password):
     finally:
         # 关闭数据库连接
         connection.close()
-
+def get_current_user():
+    """获取当前登录用户"""
+    return entry_login_username.get()
 #负责跳转管理员功能界面函数
 def open_new_admin():
     main()
@@ -211,7 +222,7 @@ button_register.pack()
 button_switch_to_login = tk.Button(zhuce_frame, text="返回登录", command=switch_to_login)
 button_switch_to_login.pack()
 
-
+current_username=entry_login_username.get()
 
 # 最初显示登录界面
 login_frame.pack()
