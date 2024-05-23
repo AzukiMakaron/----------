@@ -11,11 +11,14 @@ mydb = mysql.connector.connect(
     database="InternshipSystem"
 )
 
-class InternshipApp(tk.Tk):
-    def __init__(self):
-        super().__init__()
-        self.title("实习申请管理系统")
-        self.geometry("600x400")
+class InternshipApp(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent)  # 现在接受父级窗口作为参数
+        self.pack(expand=True, fill=tk.BOTH)  # 确保填充父级窗口
+        self.create_widgets()
+
+    def create_widgets(self):
+        # self.geometry("600x400")
         
         self.tabControl = ttk.Notebook(self)
         

@@ -4,6 +4,7 @@ from student import main1
 from company import main2
 from tkinter import  messagebox
 import mysql.connector
+from user_session import UserSession
 # 创建数据库
 conn =  mysql.connector.connect(
      host = "60.204.212.12", # 数据库主机地址
@@ -15,19 +16,19 @@ conn =  mysql.connector.connect(
 # 获取游标
 cursor = conn.cursor()
 
-def get_user_role(user_name):
-    """从数据库获取用户角色"""
-    try:
-        connection = conn
-        cursor = connection.cursor()
-        cursor.execute("SELECT Role FROM User WHERE Username = %s", (user_name,))
-        role = cursor.fetchone()
-        return role[0] if role else None
-    except mysql.connector.Error as e:
-        print(f"Error: {e}")
-    finally:
-        if connection:
-            connection.close()
+# def get_user_role(user_name):
+#     """从数据库获取用户角色"""
+#     try:
+#         connection = conn
+#         cursor = connection.cursor()
+#         cursor.execute("SELECT Role FROM User WHERE Username = %s", (user_name,))
+#         role = cursor.fetchone()
+#         return role[0] if role else None
+#     except mysql.connector.Error as e:
+#         print(f"Error: {e}")
+#     finally:
+#         if connection:
+#             connection.close()
 
 #调用函数登录注册屏幕居中
 def center_window(window, width, height):
@@ -45,18 +46,16 @@ def getLoginUser(username):
     return role[0] if role else None
 # 创建登录界面
 def login(username, password):
-    # 连接到数据库
-    username=get_current_user(login_frame.get_username())
     connection = conn
     try:
         with connection.cursor() as cursor:
-            # 查询数据库以验证用户信息
             sql = "SELECT * FROM User WHERE Username=%s AND Password=%s"
             cursor.execute(sql, (username, password))
             user = cursor.fetchone()
 
             if user:
-                role = user[2] # 角色信息在元组中的第三个位置（即user表中第三列）
+                UserSession.set_user_id(user[0])  # 假设用户ID是查询结果的第一列
+                role = user[2]  # 角色信息在元组中的第三个位置
                 if role == '管理员':
                     messagebox.showinfo("登录成功", "欢迎回来，{}管理员".format(username))
                     window.destroy()
@@ -69,14 +68,12 @@ def login(username, password):
                     messagebox.showinfo("登录成功", "欢迎回来，{}公司".format(username))
                     window.destroy()
                     open_new_company()
-
                 else:
-                   messagebox.showerror("错误","未知身份角色！")
+                    messagebox.showerror("错误", "未知身份角色！")
             else:
                 messagebox.showerror("登录失败", "用户名或密码错误，请重试")
-    finally:
-        # 关闭数据库连接
-        connection.close()
+    except mysql.connector.Error as e:
+        print(f"错误: {e}")
 def get_current_user():
     """获取当前登录用户"""
     return entry_login_username.get()
@@ -116,8 +113,8 @@ def zhuce():
 #判断用户名是否已经存在
     if existing_user:
         messagebox.showerror("注册失败","用户名已存在")
-        cursor.close()
-        conn.close()
+        # cursor.close()
+        # conn.close()
         return
 
 
@@ -134,8 +131,8 @@ def zhuce():
     conn.commit()
 
     # 关闭游标和数据库连接
-    cursor.close()
-    conn.close()
+    # cursor.close()
+    # conn.close()
 
     # 显示注册成功信息
     messagebox.showinfo("注册成功", "用户{}，注册成功!".format(username))
@@ -167,7 +164,7 @@ center_window(window, window_width, window_height)
 # 设计登录界面
 login_frame = tk.Frame(window)
 
-10
+
 #登录用户名文本框
 label_login_username = tk.Label(login_frame, text="用户名：")
 label_login_username.pack()
@@ -183,6 +180,7 @@ entry_login_password.pack()
 #登录按钮
 button_login = tk.Button(login_frame, text="登录",command=lambda: login(entry_login_username.get(), entry_login_password.get()))#lamba后面的用于返回当点击登录按钮时，将会调用login函数，并传入文本框中的用户名和密码作为参数。非常抱歉给您带来的困惑。
 button_login.pack()
+username=entry_login_username.get()
 
 #注册按钮
 button_switch_to_zhuce = tk.Button(login_frame, text="注册", command=switch_to_zhuce)
@@ -227,6 +225,6 @@ current_username=entry_login_username.get()
 # 最初显示登录界面
 login_frame.pack()
 
-# 运行主循环
-window.mainloop()
 
+if __name__ == '__main__':
+    window.mainloop()
