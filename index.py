@@ -6,7 +6,7 @@ def open_module(module_name):
     try:
         if module_name == "学生简历信息管理与查询界面":
             import student_resume_manage
-            student_resume_manage.run()
+            student_resume_manage.app.mainloop() #跳转到简历上传管理界面
         elif module_name == "岗位和应聘":
             import application
             application.run()
