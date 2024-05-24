@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import mysql.connector
 import re
-
+from user_session import UserSession
 # 数据库连接
 mydb = mysql.connector.connect(
     host="60.204.212.12",
@@ -22,20 +22,16 @@ class InternshipApp(tk.Frame):
         
         self.tabControl = ttk.Notebook(self)
         
-        # 学生界面
-        self.student_frame = ttk.Frame(self.tabControl)
-        self.tabControl.add(self.student_frame, text='学生')
-        self.create_student_tab()
-
-        # 企业界面
-        self.company_frame = ttk.Frame(self.tabControl)
-        self.tabControl.add(self.company_frame, text='企业')
-        self.create_company_tab()
+        # Check user role and adjust tabs accordingly
+        self.adjust_tabs_based_on_role()
 
         self.tabControl.pack(expand=1, fill="both")
 
+
     def create_student_tab(self):
         # 学生界面布局
+        self.student_frame = ttk.Frame(self.tabControl)
+        self.tabControl.add(self.student_frame, text='学生')
         self.student_id_var = tk.IntVar()
         ttk.Label(self.student_frame, text="学生ID:").grid(row=0, column=0, padx=10, pady=10)
         ttk.Entry(self.student_frame, textvariable=self.student_id_var).grid(row=0, column=1, padx=10, pady=10)
@@ -48,6 +44,8 @@ class InternshipApp(tk.Frame):
 
     def create_company_tab(self):
         # 企业界面布局
+        self.company_frame = ttk.Frame(self.tabControl)
+        self.tabControl.add(self.company_frame, text='企业')
         self.company_id_var = tk.IntVar()
         ttk.Label(self.company_frame, text="企业ID:").grid(row=0, column=0, padx=10, pady=10)
         ttk.Entry(self.company_frame, textvariable=self.company_id_var).grid(row=0, column=1, padx=10, pady=10)
@@ -58,7 +56,24 @@ class InternshipApp(tk.Frame):
         ttk.Button(self.company_frame, text="查看申请", command=self.view_applications).grid(row=2, column=0, padx=10, pady=10)
         ttk.Button(self.company_frame, text="接受申请", command=lambda: self.update_application_status('accepted')).grid(row=2, column=1, padx=10, pady=10)
         ttk.Button(self.company_frame, text="拒绝申请", command=lambda: self.update_application_status('rejected')).grid(row=2, column=2, padx=10, pady=10)
-
+    def get_user_role(self):
+        user_id = UserSession.get_user_id()
+        if user_id:
+            cursor = mydb.cursor()
+            cursor.execute("SELECT Role FROM User WHERE Username = %s", (user_id,))
+            result = cursor.fetchone()
+            if result:
+                return result[0]
+        return None
+    def adjust_tabs_based_on_role(self):
+        role = self.get_user_role()
+        
+        if role == '学生':
+            self.create_student_tab()
+        elif role == '企业':
+            self.create_company_tab()
+        else:
+            messagebox.showerror("错误", "不可用的身份.")
     def view_jobs(self):
         self.job_listbox.delete(0, tk.END)
         cursor = mydb.cursor()

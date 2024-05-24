@@ -155,8 +155,9 @@ def switch_to_zhuce():
 # 创建新窗口并居中屏幕
 window = tk.Tk()
 window.title("登录注册界面")
-window_width = 300
-window_height = 250
+
+window_width = 800
+window_height = 600
 center_window(window, window_width, window_height)
 
 
@@ -185,6 +186,7 @@ username=entry_login_username.get()
 #注册按钮
 button_switch_to_zhuce = tk.Button(login_frame, text="注册", command=switch_to_zhuce)
 button_switch_to_zhuce.pack()
+
 
 # 设计创造注册界面
 zhuce_frame = tk.Frame(window)
@@ -221,7 +223,8 @@ button_switch_to_login = tk.Button(zhuce_frame, text="返回登录", command=swi
 button_switch_to_login.pack()
 
 current_username=entry_login_username.get()
-
+wel_label = tk.Label(window, text="欢迎使用学生实习信息管理系统", font=("Arial", 20))
+wel_label.pack()
 # 最初显示登录界面
 login_frame.pack()
 
