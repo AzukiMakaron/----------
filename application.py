@@ -72,6 +72,9 @@ class InternshipApp(tk.Frame):
             self.create_student_tab()
         elif role == '企业':
             self.create_company_tab()
+        elif role =='管理员':
+            self.create_student_tab()
+            self.create_company_tab()
         else:
             messagebox.showerror("错误", "不可用的身份.")
     def view_jobs(self):
